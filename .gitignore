@@ -23,9 +23,3 @@ Thumbs.db
 
 # Streamlit cache
 .streamlit/
-
-# Model files (exclude if not uploading models)
-models/*.pkl
-
-# Dataset files (exclude if dataset is large or restricted)
-data/*.csv
