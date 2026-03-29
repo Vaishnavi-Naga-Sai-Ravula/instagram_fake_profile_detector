@@ -5,6 +5,8 @@ This project presents a machine learning system designed to identify fake Instag
 
 The system is implemented as a complete pipeline that includes data preprocessing, feature engineering, model training, backend API development, and an interactive frontend for user interaction.
 
+👉 Official GitHub Repository: [Instagram Fake Profile Detector](https://github.com/Vaishnavi-Naga-Sai-Ravula/instagram_fake_profile_detector)
+
 ---
 
 ## Key Features
