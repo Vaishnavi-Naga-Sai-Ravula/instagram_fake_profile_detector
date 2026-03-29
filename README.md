@@ -29,6 +29,26 @@ The system is implemented as a complete pipeline that includes data preprocessin
 
 ---
 
+## Models Folder
+
+The `models/` directory contains pre-trained machine learning models and supporting files:
+
+- `random_forest.pkl` – Random Forest classifier  
+- `xgboost.pkl` – XGBoost classifier  
+- `adaboost.pkl` – AdaBoost classifier  
+- `naive_bayes.pkl` – Naive Bayes classifier  
+- `voting.pkl` – Voting ensemble model  
+- `ensemble.pkl` – Combined ensemble model  
+- `scaler.pkl` – StandardScaler object used for feature normalization  
+- `feature_cols.pkl` – List of features used during training  
+- `X_test.pkl` – Test feature set for evaluation  
+- `y_test.pkl` – Test labels for evaluation  
+These files are required for the Flask API (`flask_app.py`) to serve predictions.  
+To regenerate them, run:
+python main.py
+
+---
+
 ## Features Considered
 
 - profile_pic  
