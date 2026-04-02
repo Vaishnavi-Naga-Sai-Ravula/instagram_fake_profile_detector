@@ -1,5 +1,7 @@
 # Instagram Fake Profile Detection using Ensemble Learning Methods
 
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-blue?logo=github)](https://github.com/Vaishnavi-Naga-Sai-Ravula/instagram_fake_profile_detector)
+
 ## Overview
 This project presents a machine learning system designed to identify fake Instagram profiles using structured data. The solution combines multiple classification algorithms and integrates them through an ensemble approach to improve prediction reliability.
 
