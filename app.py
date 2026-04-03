@@ -7,20 +7,29 @@ st.set_page_config(page_title="Instagram Fake Profile Detector", page_icon="🔍
 # 🔹 DARK MODE TOGGLE
 dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=True)
 
-# 🔹 BACKGROUND IMAGE
+# 🔹 BACKGROUND IMAGE (optimized load)
+@st.cache_data  # cache image encoding for performance
 def get_base64_image(image_file):
     with open(image_file, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-bg_image = get_base64_image("static/bg.png")
+bg_image = get_base64_image("static/bg.jpg")  # use compressed .jpg for lighter weight
 
-# 🔹 STYLES (GLASSMORPHISM + ANIMATIONS)
+# 🔹 STYLES (GLASSMORPHISM + ANIMATIONS + SLIGHT BACKGROUND MOVEMENT)
 st.markdown(f"""
 <style>
 
+@keyframes moveBackground {{
+    0% {{ background-position: 0% 0%; }}
+    50% {{ background-position: 100% 0%; }}
+    100% {{ background-position: 0% 0%; }}
+}}
+
 .stApp {{
-    background: url("data:image/png;base64,{bg_image}");
-    background-size: cover;
+    background: url("data:image/jpg;base64,{bg_image}");
+    background-size: contain;   /* allow room to move */
+    background-repeat: repeat-x;  /* repeat horizontally */
+    animation: moveBackground 20s linear infinite; /* subtle visible movement */
 }}
 
 .stApp::before {{
@@ -53,7 +62,7 @@ h1, h2, h3 {{
 
 .result-box:hover {{
     transform: scale(1.05);
-    box-shadow: 0px 0px 20px rgba(255,255,255,0.2);
+    box-shadow: 0px 0px 15px rgba(255,255,255,0.15); /* lighter shadow for efficiency */
 }}
 
 .fake {{
@@ -71,7 +80,7 @@ h1, h2, h3 {{
 [data-testid="stTabs"] button {{
     background: rgba(255,255,255,0.1);
     border-radius: 10px;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(6px); /* reduced blur for smoother performance */
     color: white;
 }}
 
@@ -115,7 +124,7 @@ with tab1:
         # 🔹 PROGRESS BAR
         progress = st.progress(0)
         for i in range(100):
-            time.sleep(0.01)
+            time.sleep(0.005)  # faster loop for responsiveness
             progress.progress(i + 1)
 
         response = requests.post(f"{BASE_URL}/predict/all", json=data)
@@ -126,7 +135,7 @@ with tab1:
         df[["fake_prob","real_prob"]] = df[["fake_prob","real_prob"]].apply(pd.to_numeric, errors="coerce")
 
         st.markdown("<h3>Model Predictions</h3>", unsafe_allow_html=True)
-        st.dataframe(df)
+        st.dataframe(df, width="stretch")  # responsive table
 
         st.markdown(f"<p>Votes Fake: {result['votes_fake']}</p>", unsafe_allow_html=True)
         st.markdown(f"<p>Votes Real: {result['votes_real']}</p>", unsafe_allow_html=True)
@@ -138,13 +147,13 @@ with tab1:
             st.markdown('<div class="result-box real">✅ FINAL DECISION: REAL PROFILE</div>', unsafe_allow_html=True)
 
         # 🔹 HEATMAP
-        fig, ax = plt.subplots(figsize=(8,5))
+        fig, ax = plt.subplots(figsize=(7,4))  # slightly smaller for viewport fit
         sns.heatmap(df[["fake_prob","real_prob"]], annot=True, cmap="coolwarm", ax=ax)
         st.markdown("<h3>Model Probabilities Heatmap</h3>", unsafe_allow_html=True)
         st.pyplot(fig)
 
         # 🔹 PIE CHART (VOTES)
-        fig2, ax2 = plt.subplots()
+        fig2, ax2 = plt.subplots(figsize=(5,5))
         ax2.pie([result["votes_fake"], result["votes_real"]],
                 labels=["Fake","Real"], autopct="%1.1f%%",
                 colors=["#ff6b6b","#55efc4"], startangle=90)
@@ -154,7 +163,7 @@ with tab1:
         # 🔹 PIE CHART (AVERAGE PROBABILITY)
         avg_fake = df["fake_prob"].mean()
         avg_real = df["real_prob"].mean()
-        fig3, ax3 = plt.subplots()
+        fig3, ax3 = plt.subplots(figsize=(5,5))
         ax3.pie([avg_fake, avg_real],
                 labels=["Fake Probability","Real Probability"],
                 autopct="%1.1f%%",
@@ -173,15 +182,15 @@ with tab2:
     # 🔹 TOOLTIPS
     st.info("Precision: Accuracy of positive predictions | Recall: Coverage of actual positives | F1: Balance between Precision & Recall")
 
-    st.dataframe(metrics_df)
+    st.dataframe(metrics_df, width="stretch")
 
     if all(col in metrics_df.columns for col in ["accuracy","precision","recall","f1_score"]):
-        fig, ax = plt.subplots(figsize=(10,5))
+        fig, ax = plt.subplots(figsize=(9,4))  # optimized size
         metrics_df[["accuracy","precision","recall","f1_score"]].astype(float).plot(kind="bar", ax=ax)
         st.markdown("<h3>Performance Comparison</h3>", unsafe_allow_html=True)
         st.pyplot(fig)
 
-    fig2, ax2 = plt.subplots(figsize=(8,6))
+    fig2, ax2 = plt.subplots(figsize=(7,5))
     for model_name, model_metrics in metrics.items():
         if "fpr" in model_metrics:
             ax2.plot(model_metrics["fpr"], model_metrics["tpr"],

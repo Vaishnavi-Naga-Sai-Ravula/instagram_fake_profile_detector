@@ -9,7 +9,7 @@ The system is implemented as a complete pipeline that includes data preprocessin
 
 👉 Official GitHub Repository: [Instagram Fake Profile Detector](https://github.com/Vaishnavi-Naga-Sai-Ravula/instagram_fake_profile_detector)
 
-👉 The Streamlit dashboard supports **dark mode toggle, glassmorphism styling, animations, and interactive charts** (heatmaps, pie charts, ROC curves) for predictions and performance visualization.
+👉 The Streamlit dashboard supports dark mode toggle, glassmorphism styling, animations, subtle background movement, caching for performance, and interactive charts (heatmaps, pie charts, ROC curves) for predictions and performance visualization.
 
 ---
 
@@ -18,6 +18,8 @@ The system is implemented as a complete pipeline that includes data preprocessin
 - Ensemble learning for improved prediction performance
 - Flask REST API for serving predictions and metrics
 - Streamlit dashboard for interactive visualization
+- Optimized frontend with cached background image loading and animated background
+- Responsive charts and faster progress bar for smoother user experience
 - Pre-trained models stored in models/ for plug-and-play usage
 
 ---
@@ -105,7 +107,7 @@ instagram_fake_profile_detector/
 ├── main.py
 # Backend API(loads models)
 ├── flask_app.py
-# Streamlit frontend(dark mode+charts)
+# Streamlit frontend(dark mode+charts+animations)
 ├── app.py
 │
 # Dependencies
@@ -185,3 +187,4 @@ Focus area: Machine Learning and Data Science
 ## License
 
 This project is licensed under the MIT License.
+Copyright (c) 2026 Vaishnavi Naga Sai Ravula
