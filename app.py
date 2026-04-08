@@ -83,7 +83,10 @@ h1, h2, h3 {{
     backdrop-filter: blur(6px); /* reduced blur for smoother performance */
     color: white;
 }}
-
+[data-testid='stElementToolbar'] svg {{
+    fill: black !important;
+    color: black !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
