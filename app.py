@@ -21,14 +21,14 @@ st.markdown(f"""
 
 @keyframes moveBackground {{
     0% {{ background-position: 0% 0%; }}
-    50% {{ background-position: 100% 0%; }}
+    50% {{ background-position: 0% 100%; }}
     100% {{ background-position: 0% 0%; }}
 }}
 
 .stApp {{
     background: url("data:image/jpg;base64,{bg_image}");
-    background-size: contain;   /* allow room to move */
-    background-repeat: repeat-x;  /* repeat horizontally */
+    background-size: cover;   /* allow room to move */
+    background-repeat: repeat-y;  /* repeat vertically */
     animation: moveBackground 20s linear infinite; /* subtle visible movement */
 }}
 
