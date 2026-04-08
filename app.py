@@ -87,6 +87,9 @@ h1, h2, h3 {{
     fill: black !important;
     color: black !important;
 }}
+.stAlert p {{
+    color: white !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
