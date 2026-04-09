@@ -274,32 +274,3 @@ with tab2:
 
     st.markdown("<h3>ROC Curves</h3>", unsafe_allow_html=True)
     st.pyplot(fig2)
-
-    # 🔹 Expandable confusion matrix
-    with st.expander("See Confusion Matrix"):
-        fig3, ax3 = plt.subplots()
-        # Example confusion matrix (replace with actual if available)
-        ax3.matshow([[50,10],[5,100]], cmap="Blues")
-        st.pyplot(fig3)
-# 📖 EXPLAIN PREDICTION TAB
-with tab3:
-    st.markdown('<p class="explain-heading">Explain Prediction</p>', unsafe_allow_html=True)
-    if 'result' in locals():
-        if result["final_label"] == 0:
-            st.markdown('<p class="explain-text">📖 This profile looks suspicious because it has no profile picture, very few posts, and a high followers/following ratio.</p>', unsafe_allow_html=True)
-        else:
-            st.markdown('<p class="explain-text">📖 This profile looks genuine with consistent posts and balanced engagement.</p>', unsafe_allow_html=True)
-    else:
-        st.info("Run a prediction first to see the explanation.")
-
-    # Profile Visualization (simple playful representation)
-    st.markdown('<p class="explain-heading">Profile Visualization</p>', unsafe_allow_html=True)
-    if profile_pic == 0:
-        st.markdown('<p class="explain-text">👤 No Profile Picture</p>', unsafe_allow_html=True)
-    else:
-        st.markdown('<p class="explain-text">🖼️ Profile Picture Present</p>', unsafe_allow_html=True)
-
-    if bio_length > 50:
-        st.markdown('<p class="explain-text">💬 Long bio detected → expressive account</p>', unsafe_allow_html=True)
-    else:
-        st.markdown('<p class="explain-text">💬 Short bio detected → minimal description</p>', unsafe_allow_html=True)
