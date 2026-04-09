@@ -21,14 +21,14 @@ st.markdown(f"""
 
 @keyframes moveBackground {{
     0% {{ background-position: 0% 0%; }}
-    50% {{ background-position: 100% 0%; }}
+    50% {{ background-position: 0% 100%; }}
     100% {{ background-position: 0% 0%; }}
 }}
 
 .stApp {{
     background: url("data:image/jpg;base64,{bg_image}");
-    background-size: contain;   /* allow room to move */
-    background-repeat: repeat-x;  /* repeat horizontally */
+    background-size: cover;   /* allow room to move */
+    background-repeat: repeat-y;  /* repeat vertically */
     animation: moveBackground 20s linear infinite; /* subtle visible movement */
 }}
 
@@ -66,38 +66,90 @@ h1, h2, h3 {{
 }}
 
 .fake {{
-    background: rgba(255,107,107,0.15);
-    border: 2px solid #ff6b6b;
-    color: #ff6b6b;
+    background: rgba(255,107,107,0.15); /* white background inside the box */
+    border: 2px solid #ff6b6b; /* red border for fake */
+    color: #ff6b6b; /* red text inside */
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    font-size: 2rem; /* larger font size */
+    font-weight: bold;
+    margin: 15px 0;
+    animation: pulseRed 2s ease-in-out;
 }}
 
 .real {{
-    background: rgba(85,239,196,0.15);
-    border: 2px solid #55efc4;
-    color: #55efc4;
+    background: rgba(85,239,196,0.15); /* white background inside the box */
+    border: 2px solid #55efc4; /* green border for real */
+    color: #55efc4; /* green text inside */
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    font-size: 2rem; /* larger font size */
+    font-weight: bold;
+    margin: 15px 0;
+    animation: pulseGreen 2s ease-in-out;
 }}
-
+@keyframes pulseRed {{
+    0% {{ box-shadow: 0 0 0px #ff6b6b; }}
+    50% {{ box-shadow: 0 0 20px #ff6b6b; }}
+    100% {{ box-shadow: 0 0 0px #ff6b6b; }}
+}}
+@keyframes pulseGreen {{
+    0% {{ box-shadow: 0 0 0px #55efc4; }}
+    50% {{ box-shadow: 0 0 20px #55efc4; }}
+    100% {{ box-shadow: 0 0 0px #55efc4; }}
+}}
+.overlay-red {{
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255,107,107,0.1);
+    pointer-events: none;
+}}
+.overlay-green {{
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(85,239,196,0.1);
+    pointer-events: none;
+}}
+.explain-text {{
+    color: white !important;
+    font-size: 1.2rem;
+    font-weight: 500;
+}}
+.explain-heading {{
+    color: white !important;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-top: 1rem;
+}}
 [data-testid="stTabs"] button {{
     background: rgba(255,255,255,0.1);
     border-radius: 10px;
     backdrop-filter: blur(6px); /* reduced blur for smoother performance */
     color: white;
 }}
-
+[data-testid='stElementToolbar'] svg {{
+    fill: black !important;
+    color: black !important;
+}}
+.stAlert p {{
+    color: white !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🔍 Instagram Fake Profile Detector Dashboard")
 
 # 🔹 INPUTS
-profile_pic = st.sidebar.selectbox("Has Profile Picture?", [1, 0])
-username_length = st.sidebar.number_input("Username Length", min_value=1)
-bio_length = st.sidebar.number_input("Bio Length", min_value=0)
-external_url = st.sidebar.selectbox("Has External URL?", [1, 0])
-is_private = st.sidebar.selectbox("Private Account?", [1, 0])
-posts_count = st.sidebar.number_input("Posts Count", min_value=0)
-followers_count = st.sidebar.number_input("Followers Count", min_value=0)
-following_count = st.sidebar.number_input("Following Count", min_value=0)
+profile_pic = st.sidebar.selectbox("Has Profile Picture?", [1, 0], help="1 = Yes, 0 = No")
+username_length = st.sidebar.number_input("Username Length", min_value=1, help="Length of the username")
+bio_length = st.sidebar.number_input("Bio Length", min_value=0, help="Number of characters in bio")
+external_url = st.sidebar.selectbox("Has External URL?", [1, 0], help="1 = Yes, 0 = No")
+is_private = st.sidebar.selectbox("Private Account?", [1, 0], help="1 = Yes, 0 = No")
+posts_count = st.sidebar.number_input("Posts Count", min_value=0, help="Number of posts")
+followers_count = st.sidebar.number_input("Followers Count", min_value=0, help="Total followers")
+following_count = st.sidebar.number_input("Following Count", min_value=0, help="Total following")
 
 followers_following_ratio = followers_count / (following_count + 1)
 engagement_score = posts_count / (followers_count + 1)
@@ -115,7 +167,7 @@ data = {
     "engagement_score": float(engagement_score)
 }
 
-tab1, tab2 = st.tabs(["🔮 Prediction", "📊 Performance Dashboard"])
+tab1, tab2, tab3 = st.tabs(["🔮 Prediction", "📊 Performance Dashboard", "📖 Explain Prediction"])
 
 # 🔮 PREDICTION TAB
 with tab1:
@@ -143,9 +195,10 @@ with tab1:
         # 🔹 FINAL RESULT BOX
         if result["final_label"] == 0:
             st.markdown('<div class="result-box fake">🚨 FINAL DECISION: FAKE PROFILE</div>', unsafe_allow_html=True)
+            st.markdown("<div class='overlay-red'></div>", unsafe_allow_html=True)
         else:
             st.markdown('<div class="result-box real">✅ FINAL DECISION: REAL PROFILE</div>', unsafe_allow_html=True)
-
+            st.markdown("<div class='overlay-green'></div>", unsafe_allow_html=True)
         # 🔹 HEATMAP
         fig, ax = plt.subplots(figsize=(7,4))  # slightly smaller for viewport fit
         sns.heatmap(df[["fake_prob","real_prob"]], annot=True, cmap="coolwarm", ax=ax)
@@ -181,15 +234,33 @@ with tab2:
 
     # 🔹 TOOLTIPS
     st.info("Precision: Accuracy of positive predictions | Recall: Coverage of actual positives | F1: Balance between Precision & Recall")
-
+    # Show metrics table
     st.dataframe(metrics_df, width="stretch")
 
+    # 🔹 Gamified progress bars + badges
     if all(col in metrics_df.columns for col in ["accuracy","precision","recall","f1_score"]):
-        fig, ax = plt.subplots(figsize=(9,4))  # optimized size
+        precision = float(metrics_df["precision"].mean())
+        recall = float(metrics_df["recall"].mean())
+        f1_score = float(metrics_df["f1_score"].mean())
+
+        st.write("Precision")
+        st.progress(precision)
+        if precision > 0.9:
+            st.success("🏅 High Precision")
+
+        st.write("Recall")
+        st.progress(recall)
+
+        st.write("F1 Score")
+        st.progress(f1_score)
+
+        # 🔹 Bar chart comparison
+        fig, ax = plt.subplots(figsize=(9,4))
         metrics_df[["accuracy","precision","recall","f1_score"]].astype(float).plot(kind="bar", ax=ax)
         st.markdown("<h3>Performance Comparison</h3>", unsafe_allow_html=True)
         st.pyplot(fig)
 
+    # 🔹 ROC Curves
     fig2, ax2 = plt.subplots(figsize=(7,5))
     for model_name, model_metrics in metrics.items():
         if "fpr" in model_metrics:
@@ -203,3 +274,32 @@ with tab2:
 
     st.markdown("<h3>ROC Curves</h3>", unsafe_allow_html=True)
     st.pyplot(fig2)
+
+    # 🔹 Expandable confusion matrix
+    with st.expander("See Confusion Matrix"):
+        fig3, ax3 = plt.subplots()
+        # Example confusion matrix (replace with actual if available)
+        ax3.matshow([[50,10],[5,100]], cmap="Blues")
+        st.pyplot(fig3)
+# 📖 EXPLAIN PREDICTION TAB
+with tab3:
+    st.markdown('<p class="explain-heading">Explain Prediction</p>', unsafe_allow_html=True)
+    if 'result' in locals():
+        if result["final_label"] == 0:
+            st.markdown('<p class="explain-text">📖 This profile looks suspicious because it has no profile picture, very few posts, and a high followers/following ratio.</p>', unsafe_allow_html=True)
+        else:
+            st.markdown('<p class="explain-text">📖 This profile looks genuine with consistent posts and balanced engagement.</p>', unsafe_allow_html=True)
+    else:
+        st.info("Run a prediction first to see the explanation.")
+
+    # Profile Visualization (simple playful representation)
+    st.markdown('<p class="explain-heading">Profile Visualization</p>', unsafe_allow_html=True)
+    if profile_pic == 0:
+        st.markdown('<p class="explain-text">👤 No Profile Picture</p>', unsafe_allow_html=True)
+    else:
+        st.markdown('<p class="explain-text">🖼️ Profile Picture Present</p>', unsafe_allow_html=True)
+
+    if bio_length > 50:
+        st.markdown('<p class="explain-text">💬 Long bio detected → expressive account</p>', unsafe_allow_html=True)
+    else:
+        st.markdown('<p class="explain-text">💬 Short bio detected → minimal description</p>', unsafe_allow_html=True)

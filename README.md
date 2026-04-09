@@ -17,9 +17,13 @@ The system is implemented as a complete pipeline that includes data preprocessin
 - Multiple machine learning models for comparative analysis
 - Ensemble learning for improved prediction performance
 - Flask REST API for serving predictions and metrics
-- Streamlit dashboard for interactive visualization
-- Optimized frontend with cached background image loading and animated background
-- Responsive charts and faster progress bar for smoother user experience
+- Streamlit dashboard with:
+  - Dark mode toggle and glassmorphism styling
+  - Animated background with subtle movement
+  - Overlay effects for final decision (red for fake, green for real)
+  - Gamified performance metrics (progress bars + badges)
+  - Explainability tab with textual reasoning and profile visualization
+  - Interactive charts: heatmaps, pie charts, ROC curves
 - Pre-trained models stored in models/ for plug-and-play usage
 
 ---
@@ -107,7 +111,7 @@ instagram_fake_profile_detector/
 ├── main.py
 # Backend API(loads models)
 ├── flask_app.py
-# Streamlit frontend(dark mode+charts+animations)
+# Streamlit frontend(dark mode+animations+explainability)
 ├── app.py
 │
 # Dependencies
