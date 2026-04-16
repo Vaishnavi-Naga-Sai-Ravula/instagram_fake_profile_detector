@@ -142,15 +142,18 @@ h1, h2, h3 {{
 st.title("🔍 Instagram Fake Profile Detector Dashboard")
 
 # 🔹 INPUTS
-profile_pic = st.sidebar.selectbox("Has Profile Picture?", [1, 0], help="1 = Yes, 0 = No")
+profile_pic = st.sidebar.selectbox("Has Profile Picture?", ["Yes", "No"], help="Yes = 1, No = 0")
 username_length = st.sidebar.number_input("Username Length", min_value=1, help="Length of the username")
 bio_length = st.sidebar.number_input("Bio Length", min_value=0, help="Number of characters in bio")
-external_url = st.sidebar.selectbox("Has External URL?", [1, 0], help="1 = Yes, 0 = No")
-is_private = st.sidebar.selectbox("Private Account?", [1, 0], help="1 = Yes, 0 = No")
+external_url = st.sidebar.selectbox("Has External URL?", ["Yes", "No"], help="Yes = 1, No = 0")
+is_private = st.sidebar.selectbox("Private Account?", ["Yes", "No"], help="Yes = 1, No = 0")
 posts_count = st.sidebar.number_input("Posts Count", min_value=0, help="Number of posts")
 followers_count = st.sidebar.number_input("Followers Count", min_value=0, help="Total followers")
 following_count = st.sidebar.number_input("Following Count", min_value=0, help="Total following")
-
+# Convert Yes/No to 1/0
+profile_pic = 1 if profile_pic == "Yes" else 0
+external_url = 1 if external_url == "Yes" else 0
+is_private = 1 if is_private == "Yes" else 0
 followers_following_ratio = followers_count / (following_count + 1)
 engagement_score = posts_count / (followers_count + 1)
 
@@ -180,7 +183,13 @@ with tab1:
             progress.progress(i + 1)
 
         response = requests.post(f"{BASE_URL}/predict/all", json=data)
-        result = response.json()
+        try:
+            result = response.json()
+            st.session_state["prediction_result"] = result
+        except ValueError:
+            st.error("Backend did not return valid JSON. Check Flask logs.")
+            st.write("Raw response from Flask:", response.text)
+            result = None
 
         preds = result["all_predictions"]
         df = pd.DataFrame(preds).T
@@ -274,3 +283,30 @@ with tab2:
 
     st.markdown("<h3>ROC Curves</h3>", unsafe_allow_html=True)
     st.pyplot(fig2)
+# 📖 EXPLAIN PREDICTION TAB
+with tab3:
+    if "prediction_result" in st.session_state:
+        result = st.session_state["prediction_result"]
+
+        if "explain_prediction" in result:
+            # Feature values
+            st.markdown("<h3 class='explain-heading'>Feature Values</h3>", unsafe_allow_html=True)
+            values_df = pd.DataFrame.from_dict(result["explain_prediction"]["values"], orient="index", columns=["Value"])
+            st.dataframe(values_df, width="stretch")
+
+            # Feature importance (averaged across models)
+            st.markdown("<h3 class='explain-heading'>Averaged Feature Importance</h3>", unsafe_allow_html=True)
+            importance_df = pd.DataFrame.from_dict(result["explain_prediction"]["importance"], orient="index", columns=["Importance"])
+            importance_df = importance_df.sort_values("Importance", ascending=False)
+            st.dataframe(importance_df, width="stretch")
+
+            # Bar chart of averaged importance
+            fig, ax = plt.subplots(figsize=(8,4))
+            importance_df.plot(kind="bar", ax=ax, legend=False, color="#ff6b6b")
+            ax.set_ylabel("Importance Score")
+            ax.set_title("Feature Importance (Averaged Across Models)")
+            st.pyplot(fig)
+        else:
+            st.warning("No explanation data returned from backend.")
+    else:
+        st.info("Run a prediction first in the Prediction tab.")
