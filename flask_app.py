@@ -9,7 +9,8 @@ app = Flask(__name__)
 models = {
     "Random Forest": joblib.load("models/random_forest.pkl"),
     "XGBoost": joblib.load("models/xgboost.pkl"),
-    "Voting Ensemble": joblib.load("models/voting.pkl"),
+    "Soft Voting Ensemble": joblib.load("models/soft_voting.pkl"),
+    "Stacking Ensemble": joblib.load("models/stacking.pkl"),
     "AdaBoost": joblib.load("models/adaboost.pkl"),
     "Naive Bayes": joblib.load("models/naive_bayes.pkl")
 }
@@ -112,7 +113,12 @@ def predict_all():
     # AdaBoost
     if hasattr(models["AdaBoost"], "feature_importances_"):
         importance_list.append(models["AdaBoost"].feature_importances_)
-
+        
+    # Naive Bayes (approx importance using log probabilities)
+    if hasattr(models["Naive Bayes"], "feature_log_prob_"):
+        nb_importance = np.abs(models["Naive Bayes"].feature_log_prob_).mean(axis=0)
+        importance_list.append(nb_importance)
+        
     # Average importance if available
     if importance_list:
         avg_importance = np.mean(importance_list, axis=0)
