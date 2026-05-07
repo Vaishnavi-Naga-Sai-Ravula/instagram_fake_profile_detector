@@ -65,6 +65,11 @@ The `models/` directory contains pre-trained machine learning models and support
 - `feature_cols.pkl` – List of features used during training  
 - `X_test.pkl` – Test feature set for evaluation  
 - `y_test.pkl` – Test labels for evaluation
+- `soft_voting.pkl` – Soft Voting ensemble model  
+- `scaler.pkl` – StandardScaler object used for feature normalization  
+- `feature_cols.pkl` – List of features used during training  
+- `X_test.pkl` – Test feature set for evaluation  
+- `y_test.pkl` – Test labels for evaluation  
 - `metrics.json` (precomputed evaluation metrics)
 - `class_balance.png` (visualization of dataset balance before/after SMOTE)
 These files are required for the Flask API (`flask_app.py`) to serve predictions.  

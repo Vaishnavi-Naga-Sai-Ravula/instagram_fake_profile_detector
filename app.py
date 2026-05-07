@@ -396,4 +396,8 @@ with tab3:
         else:
             st.warning("No explanation data returned from backend.")
     else:
+<<<<<<< HEAD
         st.info("Run a prediction first in the Prediction tab.")
+=======
+        st.info("Run a prediction first in the Prediction tab.")
+>>>>>>> aac6dfe (Resolve merge conflicts)
