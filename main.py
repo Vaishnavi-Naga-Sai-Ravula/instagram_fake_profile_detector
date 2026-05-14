@@ -53,12 +53,8 @@ smote = SMOTE(sampling_strategy="auto", random_state=42)
 X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
 print("Train set after SMOTE:", y_train_balanced.value_counts())
 
-# 🔹 Apply SMOTE to test set (⚠️ only for visualization, not for training/evaluation)
-X_test_balanced, y_test_balanced = smote.fit_resample(X_test, y_test)
-print("Test set after SMOTE (visualization only):", y_test_balanced.value_counts())
-
 # 🔹 Visualize distributions
-fig, axes = plt.subplots(1, 4, figsize=(20,4))
+fig, axes = plt.subplots(1, 3, figsize=(15,4))
 
 # Full dataset
 y.value_counts().plot(kind="bar", ax=axes[0], color=["#ff6b6b","#55efc4"])
@@ -75,11 +71,6 @@ y_train_balanced.value_counts().plot(kind="bar", ax=axes[2], color=["#ff6b6b","#
 axes[2].set_title("Train After SMOTE")
 axes[2].set_xticklabels(["Fake (0)", "Real (1)"], rotation=0)
 
-# Test set after SMOTE (visualization only)
-y_test_balanced.value_counts().plot(kind="bar", ax=axes[3], color=["#ff6b6b","#55efc4"])
-axes[3].set_title("Test After SMOTE (Visualization Only)")
-axes[3].set_xticklabels(["Fake (0)", "Real (1)"], rotation=0)
-
 plt.tight_layout()
 plt.savefig("models/class_balance.png")
 plt.close()
@@ -90,11 +81,10 @@ print(f"Full dataset → Fake: {y.value_counts()[0]}, Real: {y.value_counts()[1]
 print(f"Train before SMOTE → Fake: {y_train.value_counts()[0]}, Real: {y_train.value_counts()[1]}")
 print(f"Train after SMOTE → Fake: {y_train_balanced.value_counts()[0]}, Real: {y_train_balanced.value_counts()[1]}")
 print(f"Test set → Fake: {y_test.value_counts()[0]}, Real: {y_test.value_counts()[1]}")
-print(f"Test after SMOTE (visualization only) → Fake: {y_test_balanced.value_counts()[0]}, Real: {y_test_balanced.value_counts()[1]}")
 
 # 🔹 Scaling
 scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
+X_train_scaled = scaler.fit_transform(X_train_balanced)
 X_test_scaled = scaler.transform(X_test)
 
 # 🔹 Base Models (tuned)
@@ -106,7 +96,7 @@ models = {
 }
 
 for name, model in models.items():
-    model.fit(X_train_scaled, y_train)
+    model.fit(X_train_scaled, y_train_balanced)
 
 # 🔹 Soft Voting Ensemble
 soft_voting = VotingClassifier(
@@ -116,7 +106,7 @@ soft_voting = VotingClassifier(
                 ('ada', models["AdaBoost"])],
     voting='soft',
     n_jobs=1
-).fit(X_train_scaled, y_train)
+).fit(X_train_scaled, y_train_balanced)
 
 # 🔹 Stacking Ensemble
 stacking = StackingClassifier(
@@ -128,7 +118,7 @@ stacking = StackingClassifier(
     stack_method='predict_proba',
     passthrough=True,
     n_jobs=1
-).fit(X_train_scaled, y_train)
+).fit(X_train_scaled, y_train_balanced)
 
 # 🔹 Evaluate all models + ensemble
 MODEL_METRICS = {}
@@ -177,7 +167,7 @@ with open("models/metrics.json", "w") as f:
 
 # 🔹 Save models and test data
 pickle.dump(soft_voting, open("models/soft_voting.pkl","wb"))
-pickle.dump(stacking, open("models/stacking.pkl","wb"))  # same filename so Flask app works
+pickle.dump(stacking, open("models/stacking.pkl","wb"))
 pickle.dump(scaler, open("models/scaler.pkl","wb"))
 pickle.dump(FEATURE_COLS, open("models/feature_cols.pkl","wb"))
 pickle.dump(X_test_scaled, open("models/X_test.pkl","wb"))
