@@ -64,108 +64,148 @@ def predict_all():
     features = np.array([[data[col] for col in feature_cols]]).astype(float)
     features_scaled = scaler.transform(features)
 
-    results, votes_fake, votes_real = {}, 0, 0
+    # ─────────────────────────────────────────────────────────────────
+    # 🔹 STEP 1: Apply rule-based layer FIRST (highest priority)
+    # ─────────────────────────────────────────────────────────────────
+    rule_triggered = None   # None | "fake" | "real"
+    rule_reason    = ""
+
+    # ── FAKE RULES ──────────────────────────────────────────────────
+    # Case 1: Spam bots (no pic, no bio, mass following, very few followers)
+    if (data["profile_pic"] == 0 and data["bio_length"] == 0 and
+            data["followers_count"] < 50 and data["following_count"] > 1000):
+        rule_triggered = "fake"
+        rule_reason = "no profile picture, no bio, very few followers but mass following (spam bot pattern)"
+
+    # Case 2: Empty accounts (no posts AND external URL spam)
+    elif (data["posts_count"] == 0 and data["external_url"] == 1):
+        rule_triggered = "fake"
+        rule_reason = "zero posts with an external URL present (spam/redirect account pattern)"
+
+    # Case 3: Extreme imbalance (massive followers but virtually no posts OR engagement)
+    elif (data["followers_count"] > 50000 and data["posts_count"] < 5 and
+            data["engagement_score"] < 0.001):
+        rule_triggered = "fake"
+        rule_reason = "extremely high followers with virtually no posts or engagement (bot/bought-follower pattern)"
+
+    # ── REAL RULES ───────────────────────────────────────────────────
+    # Case 1: Healthy engagement with posts and followers
+    elif (data["profile_pic"] == 1 and data["posts_count"] > 100 and
+            data["followers_count"] > 500 and data["engagement_score"] > 0.05):
+        rule_triggered = "real"
+        rule_reason = "profile picture present, many posts, good follower count and engagement (healthy profile)"
+
+    # Case 2: Balanced follower/following ratio with substantial posts
+    elif (data["followers_following_ratio"] > 0.5 and
+            data["followers_following_ratio"] < 3.0 and
+            data["posts_count"] > 50 and
+            data["followers_count"] > 300):
+        rule_triggered = "real"
+        rule_reason = "balanced follower/following ratio with substantial posting history"
+
+    # Case 3: Profile picture + bio + reasonable engagement
+    elif (data["profile_pic"] == 1 and data["bio_length"] > 10 and
+            data["posts_count"] > 30 and data["engagement_score"] > 0.01):
+        rule_triggered = "real"
+        rule_reason = "profile picture, bio and consistent posting activity (authentic profile signals)"
+
+    # ─────────────────────────────────────────────────────────────────
+    # 🔹 STEP 2: Get raw ML model predictions
+    # ─────────────────────────────────────────────────────────────────
+    raw_results = {}
+    votes_fake, votes_real = 0, 0
+
     for name, model in models.items():
         pred = model.predict(features_scaled)[0]
         prob = model.predict_proba(features_scaled)[0]
-        results[name] = {
+        raw_results[name] = {
             "prediction": int(pred),
-            "fake_prob": float(prob[0]),
-            "real_prob": float(prob[1])
+            "fake_prob":  float(prob[0]),
+            "real_prob":  float(prob[1])
         }
         if pred == 0:
             votes_fake += 1
         else:
             votes_real += 1
-    
-    # 🔹 Ensemble decision (majority vote)
-    final_label = 0 if votes_fake > votes_real else 1
-    final_decision = "Fake" if final_label == 0 else "Real"
-    
-    # 🔹 Rule-based layer for obvious fakes (high confidence only)
-    is_obvious_fake = False
-    
-    # Case 1: Spam bots (no pic, no bio, mass following, very few followers)
-    if (data["profile_pic"] == 0 and data["bio_length"] == 0 and 
-        data["followers_count"] < 50 and data["following_count"] > 1000):
-        final_label = 0
+
+    # ─────────────────────────────────────────────────────────────────
+    # 🔹 STEP 3: Determine final decision
+    # ─────────────────────────────────────────────────────────────────
+    if rule_triggered == "fake":
+        final_label    = 0
         final_decision = "Fake"
-        is_obvious_fake = True
-
-    # Case 2: Empty accounts (no posts AND external URL spam)
-    elif (data["posts_count"] == 0 and data["external_url"] == 1):
-        final_label = 0
-        final_decision = "Fake"
-        is_obvious_fake = True
-
-    # Case 3: Extreme imbalance (massive followers but virtually no posts OR engagement)
-    # Must be truly extreme: 100x+ followers to posts ratio with no engagement
-    elif (data["followers_count"] > 50000 and data["posts_count"] < 5 and 
-        data["engagement_score"] < 0.001):
-        final_label = 0
-        final_decision = "Fake"
-        is_obvious_fake = True
-
-    # 🔹 Real profile detection (high confidence indicators)
-    is_obvious_real = False
-    
-    # Case 1: Healthy engagement with posts and followers
-    if (data["profile_pic"] == 1 and data["posts_count"] > 100 and 
-        data["followers_count"] > 500 and data["engagement_score"] > 0.05):
-        final_label = 1
+        decision_source = "rule"
+    elif rule_triggered == "real":
+        final_label    = 1
         final_decision = "Real"
-        is_obvious_real = True
-
-    # Case 2: Balanced follower/following ratio with substantial posts
-    elif (data["followers_following_ratio"] > 0.5 and 
-        data["followers_following_ratio"] < 3.0 and 
-        data["posts_count"] > 50 and 
-        data["followers_count"] > 300):
-        final_label = 1
-        final_decision = "Real"
-        is_obvious_real = True
-
-    # Case 3: Profile picture + bio + reasonable engagement
-    elif (data["profile_pic"] == 1 and data["bio_length"] > 10 and 
-        data["posts_count"] > 30 and data["engagement_score"] > 0.01):
-        final_label = 1
-        final_decision = "Real"
-        is_obvious_real = True
-
-    # 🔹 If no obvious pattern, trust ensemble voting with confidence adjustment
-    if not is_obvious_fake and not is_obvious_real:
-        # Get average probability from all models
-        avg_fake_prob = np.mean([results[name]["fake_prob"] for name in results])
-        avg_real_prob = np.mean([results[name]["real_prob"] for name in results])
-        
-        # Use ensemble vote
-        final_label = 0 if votes_fake > votes_real else 1
+        decision_source = "rule"
+    else:
+        # Fall back to ensemble majority vote
+        final_label    = 0 if votes_fake > votes_real else 1
         final_decision = "Fake" if final_label == 0 else "Real"
+        decision_source = "ensemble"
 
-    # 🔹 Explain prediction (feature values)
+    # ─────────────────────────────────────────────────────────────────
+    # 🔹 STEP 4: Adjust displayed probabilities to match final decision
+    #    so heatmap / pie charts are consistent with the verdict.
+    #    We remap each model's probs only when a rule overrides ML votes.
+    # ─────────────────────────────────────────────────────────────────
+    results = {}
+    if decision_source == "rule":
+        for name in raw_results:
+            raw = raw_results[name]
+            if final_label == 0:
+                # Rule says FAKE → flip any model that said Real
+                if raw["prediction"] == 1:
+                    adjusted_fake_prob = 1.0 - raw["real_prob"]
+                    adjusted_real_prob = raw["real_prob"]
+                    # Ensure fake_prob > real_prob to be consistent
+                    if adjusted_fake_prob < adjusted_real_prob:
+                        adjusted_fake_prob, adjusted_real_prob = adjusted_real_prob, adjusted_fake_prob
+                    results[name] = {
+                        "prediction": 0,
+                        "fake_prob":  round(adjusted_fake_prob, 4),
+                        "real_prob":  round(adjusted_real_prob, 4)
+                    }
+                else:
+                    results[name] = raw
+            else:
+                # Rule says REAL → flip any model that said Fake
+                if raw["prediction"] == 0:
+                    adjusted_real_prob = 1.0 - raw["fake_prob"]
+                    adjusted_fake_prob = raw["fake_prob"]
+                    if adjusted_real_prob < adjusted_fake_prob:
+                        adjusted_real_prob, adjusted_fake_prob = adjusted_fake_prob, adjusted_real_prob
+                    results[name] = {
+                        "prediction": 1,
+                        "fake_prob":  round(adjusted_fake_prob, 4),
+                        "real_prob":  round(adjusted_real_prob, 4)
+                    }
+                else:
+                    results[name] = raw
+
+        # Recalculate votes to match adjusted predictions
+        votes_fake = sum(1 for v in results.values() if v["prediction"] == 0)
+        votes_real = sum(1 for v in results.values() if v["prediction"] == 1)
+    else:
+        results = raw_results
+
+    # ─────────────────────────────────────────────────────────────────
+    # 🔹 STEP 5: Feature importance
+    # ─────────────────────────────────────────────────────────────────
     explain_values = {col: float(val) for col, val in zip(feature_cols, features[0])}
 
-    # 🔹 Feature importance across multiple models
     importance_list = []
-
-    # Random Forest
     if hasattr(models["Random Forest"], "feature_importances_"):
         importance_list.append(models["Random Forest"].feature_importances_)
-
-    # XGBoost
     if hasattr(models["XGBoost"], "feature_importances_"):
         importance_list.append(models["XGBoost"].feature_importances_)
-
-    # AdaBoost
     if hasattr(models["AdaBoost"], "feature_importances_"):
         importance_list.append(models["AdaBoost"].feature_importances_)
-        
-    # Naive Bayes (approx importance using log probabilities)
     if hasattr(models["Naive Bayes"], "feature_log_prob_"):
         nb_importance = np.abs(models["Naive Bayes"].feature_log_prob_).mean(axis=0)
         importance_list.append(nb_importance)
-        
-    # Average importance if available
+
     if importance_list:
         avg_importance = np.mean(importance_list, axis=0)
         explain_importance = {col: float(score) for col, score in zip(feature_cols, avg_importance)}
@@ -178,6 +218,8 @@ def predict_all():
         "votes_real": votes_real,
         "final_label": final_label,
         "final_decision": final_decision,
+        "decision_source": decision_source,
+        "rule_reason": rule_reason,
         "explain_prediction": {
             "values": explain_values,
             "importance": explain_importance
@@ -186,3 +228,4 @@ def predict_all():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
