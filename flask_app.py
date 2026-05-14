@@ -77,25 +77,71 @@ def predict_all():
             votes_fake += 1
         else:
             votes_real += 1
-    # 🔹 Ensemble decision
+    
+    # 🔹 Ensemble decision (majority vote)
     final_label = 0 if votes_fake > votes_real else 1
     final_decision = "Fake" if final_label == 0 else "Real"
-    # 🔹 Simple rule layer for obvious fakes
-    # Case 1: Spam bots (no pic, no bio, mass following)
-    if data["profile_pic"] == 0 and data["bio_length"] == 0 and data["followers_count"] < 50 and data["following_count"] > 1000:
+    
+    # 🔹 Rule-based layer for obvious fakes (high confidence only)
+    is_obvious_fake = False
+    
+    # Case 1: Spam bots (no pic, no bio, mass following, very few followers)
+    if (data["profile_pic"] == 0 and data["bio_length"] == 0 and 
+        data["followers_count"] < 50 and data["following_count"] > 1000):
         final_label = 0
         final_decision = "Fake"
+        is_obvious_fake = True
 
-    # Case 2: Empty accounts (no posts, external URL spam)
-    elif data["posts_count"] == 0 and data["external_url"] == 1:
+    # Case 2: Empty accounts (no posts AND external URL spam)
+    elif (data["posts_count"] == 0 and data["external_url"] == 1):
         final_label = 0
         final_decision = "Fake"
+        is_obvious_fake = True
 
-    # Case 3: Extreme imbalance (too many followers but no engagement)
-    elif data["followers_count"] > 10000 and data["posts_count"] < 5:
+    # Case 3: Extreme imbalance (massive followers but virtually no posts OR engagement)
+    # Must be truly extreme: 100x+ followers to posts ratio with no engagement
+    elif (data["followers_count"] > 50000 and data["posts_count"] < 5 and 
+        data["engagement_score"] < 0.001):
         final_label = 0
         final_decision = "Fake"
+        is_obvious_fake = True
+
+    # 🔹 Real profile detection (high confidence indicators)
+    is_obvious_real = False
+    
+    # Case 1: Healthy engagement with posts and followers
+    if (data["profile_pic"] == 1 and data["posts_count"] > 100 and 
+        data["followers_count"] > 500 and data["engagement_score"] > 0.05):
+        final_label = 1
+        final_decision = "Real"
+        is_obvious_real = True
+
+    # Case 2: Balanced follower/following ratio with substantial posts
+    elif (data["followers_following_ratio"] > 0.5 and 
+        data["followers_following_ratio"] < 3.0 and 
+        data["posts_count"] > 50 and 
+        data["followers_count"] > 300):
+        final_label = 1
+        final_decision = "Real"
+        is_obvious_real = True
+
+    # Case 3: Profile picture + bio + reasonable engagement
+    elif (data["profile_pic"] == 1 and data["bio_length"] > 10 and 
+        data["posts_count"] > 30 and data["engagement_score"] > 0.01):
+        final_label = 1
+        final_decision = "Real"
+        is_obvious_real = True
+
+    # 🔹 If no obvious pattern, trust ensemble voting with confidence adjustment
+    if not is_obvious_fake and not is_obvious_real:
+        # Get average probability from all models
+        avg_fake_prob = np.mean([results[name]["fake_prob"] for name in results])
+        avg_real_prob = np.mean([results[name]["real_prob"] for name in results])
         
+        # Use ensemble vote
+        final_label = 0 if votes_fake > votes_real else 1
+        final_decision = "Fake" if final_label == 0 else "Real"
+
     # 🔹 Explain prediction (feature values)
     explain_values = {col: float(val) for col, val in zip(feature_cols, features[0])}
 
