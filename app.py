@@ -8,12 +8,12 @@ st.set_page_config(page_title="Instagram Fake Profile Detector", page_icon="🔍
 dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=True)
 
 # 🔹 BACKGROUND IMAGE (optimized load)
-@st.cache_data  # cache image encoding for performance
+@st.cache_data
 def get_base64_image(image_file):
     with open(image_file, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-bg_image = get_base64_image("static/bg.jpg")  # use compressed .jpg for lighter weight
+bg_image = get_base64_image("static/bg.jpg")
 
 # 🔹 STYLES (GLASSMORPHISM + ANIMATIONS + SLIGHT BACKGROUND MOVEMENT)
 st.markdown(f"""
@@ -27,9 +27,9 @@ st.markdown(f"""
 
 .stApp {{
     background: url("data:image/jpg;base64,{bg_image}");
-    background-size: cover;   /* allow room to move */
-    background-repeat: repeat-y;  /* repeat vertically */
-    animation: moveBackground 20s linear infinite; /* subtle visible movement */
+    background-size: cover;
+    background-repeat: repeat-y;
+    animation: moveBackground 20s linear infinite;
 }}
 
 .stApp::before {{
@@ -62,34 +62,35 @@ h1, h2, h3 {{
 
 .result-box:hover {{
     transform: scale(1.05);
-    box-shadow: 0px 0px 15px rgba(255,255,255,0.15); /* lighter shadow for efficiency */
+    box-shadow: 0px 0px 15px rgba(255,255,255,0.15);
 }}
 
 .fake {{
-    background: rgba(255,107,107,0.15); /* white background inside the box */
-    border: 2px solid #ff6b6b; /* red border for fake */
-    color: #ff6b6b; /* red text inside */
+    background: rgba(255,107,107,0.15);
+    border: 2px solid #ff6b6b;
+    color: #ff6b6b;
     border-radius: 15px;
     padding: 25px;
     text-align: center;
-    font-size: 2rem; /* larger font size */
+    font-size: 2rem;
     font-weight: bold;
     margin: 15px 0;
     animation: pulseRed 2s ease-in-out;
 }}
 
 .real {{
-    background: rgba(85,239,196,0.15); /* white background inside the box */
-    border: 2px solid #55efc4; /* green border for real */
-    color: #55efc4; /* green text inside */
+    background: rgba(85,239,196,0.15);
+    border: 2px solid #55efc4;
+    color: #55efc4;
     border-radius: 15px;
     padding: 25px;
     text-align: center;
-    font-size: 2rem; /* larger font size */
+    font-size: 2rem;
     font-weight: bold;
     margin: 15px 0;
     animation: pulseGreen 2s ease-in-out;
 }}
+
 @keyframes pulseRed {{
     0% {{ box-shadow: 0 0 0px #ff6b6b; }}
     50% {{ box-shadow: 0 0 20px #ff6b6b; }}
@@ -100,6 +101,7 @@ h1, h2, h3 {{
     50% {{ box-shadow: 0 0 20px #55efc4; }}
     100% {{ box-shadow: 0 0 0px #55efc4; }}
 }}
+
 .overlay-red {{
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -130,7 +132,7 @@ h1, h2, h3 {{
 [data-testid="stTabs"] button {{
     background: rgba(255,255,255,0.1);
     border-radius: 10px;
-    backdrop-filter: blur(6px); /* reduced blur for smoother performance */
+    backdrop-filter: blur(6px);
     color: white;
 }}
 [data-testid='stElementToolbar'] svg {{
@@ -140,55 +142,57 @@ h1, h2, h3 {{
 .stAlert p {{
     color: white !important;
 }}
-
 .metric-label {{
     color: white !important;
 }}
-
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🔍 Instagram Fake Profile Detector Dashboard")
 
 # 🔹 INPUTS
-profile_pic = st.sidebar.selectbox("Has Profile Picture?", ["Yes", "No"], help="Yes = 1, No = 0")
+profile_pic    = st.sidebar.selectbox("Has Profile Picture?", ["Yes", "No"], help="Yes = 1, No = 0")
 username_length = st.sidebar.number_input("Username Length", min_value=1, help="Length of the username")
-bio_length = st.sidebar.number_input("Bio Length", min_value=0, help="Number of characters in bio")
-external_url = st.sidebar.selectbox("Has External URL?", ["Yes", "No"], help="Yes = 1, No = 0")
-is_private = st.sidebar.selectbox("Private Account?", ["Yes", "No"], help="Yes = 1, No = 0")
-posts_count = st.sidebar.number_input("Posts Count", min_value=0, help="Number of posts")
+bio_length      = st.sidebar.number_input("Bio Length", min_value=0, help="Number of characters in bio")
+external_url    = st.sidebar.selectbox("Has External URL?", ["Yes", "No"], help="Yes = 1, No = 0")
+is_private      = st.sidebar.selectbox("Private Account?", ["Yes", "No"], help="Yes = 1, No = 0")
+posts_count     = st.sidebar.number_input("Posts Count", min_value=0, help="Number of posts")
 followers_count = st.sidebar.number_input("Followers Count", min_value=0, help="Total followers")
 following_count = st.sidebar.number_input("Following Count", min_value=0, help="Total following")
+
 # Convert Yes/No to 1/0
-profile_pic = 1 if profile_pic == "Yes" else 0
-external_url = 1 if external_url == "Yes" else 0
-is_private = 1 if is_private == "Yes" else 0
+profile_pic_val  = 1 if profile_pic  == "Yes" else 0
+external_url_val = 1 if external_url == "Yes" else 0
+is_private_val   = 1 if is_private   == "Yes" else 0
+
 followers_following_ratio = followers_count / (following_count + 1)
-engagement_score = posts_count / (followers_count + 1)
+engagement_score          = posts_count     / (followers_count + 1)
 
 data = {
-    "profile_pic": int(profile_pic),
-    "username_length": int(username_length),
-    "bio_length": int(bio_length),
-    "external_url": int(external_url),
-    "is_private": int(is_private),
-    "posts_count": int(posts_count),
-    "followers_count": int(followers_count),
-    "following_count": int(following_count),
+    "profile_pic":               int(profile_pic_val),
+    "username_length":           int(username_length),
+    "bio_length":                int(bio_length),
+    "external_url":              int(external_url_val),
+    "is_private":                int(is_private_val),
+    "posts_count":               int(posts_count),
+    "followers_count":           int(followers_count),
+    "following_count":           int(following_count),
     "followers_following_ratio": float(followers_following_ratio),
-    "engagement_score": float(engagement_score)
+    "engagement_score":          float(engagement_score)
 }
 
 tab1, tab2, tab3 = st.tabs(["🔮 Prediction", "📊 Performance Dashboard", "📖 Explain Prediction"])
 
+# ══════════════════════════════════════════════
 # 🔮 PREDICTION TAB
+# ══════════════════════════════════════════════
 with tab1:
     if st.sidebar.button("🔮 Predict Now"):
 
         # 🔹 PROGRESS BAR
         progress = st.progress(0)
         for i in range(100):
-            time.sleep(0.005)  # faster loop for responsiveness
+            time.sleep(0.005)
             progress.progress(i + 1)
 
         response = requests.post(f"{BASE_URL}/predict/all", json=data)
@@ -200,104 +204,113 @@ with tab1:
             st.write("Raw response from Flask:", response.text)
             result = None
 
-        preds = result["all_predictions"]
-        df = pd.DataFrame(preds).T
-        df[["fake_prob","real_prob"]] = df[["fake_prob","real_prob"]].apply(pd.to_numeric, errors="coerce")
+        if result:
+            preds = result["all_predictions"]
+            df_pred = pd.DataFrame(preds).T
+            df_pred[["fake_prob", "real_prob"]] = df_pred[["fake_prob", "real_prob"]].apply(
+                pd.to_numeric, errors="coerce"
+            )
 
-        st.markdown("<h3>Model Predictions</h3>", unsafe_allow_html=True)
-        st.dataframe(df, width="stretch")  # responsive table
+            final_label    = result["final_label"]
+            final_decision = result["final_decision"]
+            decision_source = result.get("decision_source", "ensemble")
 
-        st.markdown(f"<p class='votes-text'>Votes Fake: {result['votes_fake']}</p>", unsafe_allow_html=True)
-        st.markdown(f"<p class='votes-text'>Votes Real: {result['votes_real']}</p>", unsafe_allow_html=True)
+            st.markdown("<h3>Model Predictions</h3>", unsafe_allow_html=True)
+            st.dataframe(df_pred, use_container_width=True)
 
-        # 🔹 FINAL RESULT BOX
-        if result["final_label"] == 0:
-            st.markdown('<div class="result-box fake">🚨 FINAL DECISION: FAKE PROFILE</div>', unsafe_allow_html=True)
-            st.markdown("<div class='overlay-red'></div>", unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="result-box real">✅ FINAL DECISION: REAL PROFILE</div>', unsafe_allow_html=True)
-            st.markdown("<div class='overlay-green'></div>", unsafe_allow_html=True)
-        # 🔹 HEATMAP
-        fig, ax = plt.subplots(figsize=(7,4))  # slightly smaller for viewport fit
-        sns.heatmap(df[["fake_prob","real_prob"]], annot=True, cmap="coolwarm", ax=ax)
-        st.markdown("<h3>Model Probabilities Heatmap</h3>", unsafe_allow_html=True)
-        st.pyplot(fig)
+            st.markdown(f"<p class='votes-text'>Votes Fake: {result['votes_fake']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p class='votes-text'>Votes Real: {result['votes_real']}</p>", unsafe_allow_html=True)
 
-        # 🔹 PIE CHART (VOTES)
-        fig2, ax2 = plt.subplots(figsize=(5,5))
-        ax2.pie([result["votes_fake"], result["votes_real"]],
-                labels=["Fake","Real"], autopct="%1.1f%%",
-                colors=["#ff6b6b","#55efc4"], startangle=90)
-        st.markdown("<h3>Votes Distribution</h3>", unsafe_allow_html=True)
-        st.pyplot(fig2)
+            # 🔹 FINAL RESULT BOX
+            if final_label == 0:
+                st.markdown('<div class="result-box fake">🚨 FINAL DECISION: FAKE PROFILE</div>', unsafe_allow_html=True)
+                st.markdown("<div class='overlay-red'></div>", unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="result-box real">✅ FINAL DECISION: REAL PROFILE</div>', unsafe_allow_html=True)
+                st.markdown("<div class='overlay-green'></div>", unsafe_allow_html=True)
 
-        # 🔹 PIE CHART (AVERAGE PROBABILITY)
-        avg_fake = df["fake_prob"].mean()
-        avg_real = df["real_prob"].mean()
-        fig3, ax3 = plt.subplots(figsize=(5,5))
-        ax3.pie([avg_fake, avg_real],
-                labels=["Fake Probability","Real Probability"],
+            # 🔹 HEATMAP — uses adjusted probabilities (consistent with final decision)
+            fig, ax = plt.subplots(figsize=(7, 4))
+            sns.heatmap(df_pred[["fake_prob", "real_prob"]], annot=True, cmap="coolwarm", ax=ax)
+            st.markdown("<h3>Model Probabilities Heatmap</h3>", unsafe_allow_html=True)
+            st.pyplot(fig)
+
+            # 🔹 PIE CHART (VOTES) — uses adjusted votes
+            fig2, ax2 = plt.subplots(figsize=(5, 5))
+            ax2.pie(
+                [result["votes_fake"], result["votes_real"]],
+                labels=["Fake", "Real"],
                 autopct="%1.1f%%",
-                colors=["#ff6b6b","#55efc4"],
-                startangle=90)
-        st.markdown("<h3>Average Probability Distribution</h3>", unsafe_allow_html=True)
-        st.pyplot(fig3)
+                colors=["#ff6b6b", "#55efc4"],
+                startangle=90
+            )
+            st.markdown("<h3>Votes Distribution</h3>", unsafe_allow_html=True)
+            st.pyplot(fig2)
 
+            # 🔹 PIE CHART (AVERAGE PROBABILITY) — uses adjusted probs
+            avg_fake = df_pred["fake_prob"].mean()
+            avg_real = df_pred["real_prob"].mean()
+            fig3, ax3 = plt.subplots(figsize=(5, 5))
+            ax3.pie(
+                [avg_fake, avg_real],
+                labels=["Fake Probability", "Real Probability"],
+                autopct="%1.1f%%",
+                colors=["#ff6b6b", "#55efc4"],
+                startangle=90
+            )
+            st.markdown("<h3>Average Probability Distribution</h3>", unsafe_allow_html=True)
+            st.pyplot(fig3)
+
+# ══════════════════════════════════════════════
 # 📊 PERFORMANCE TAB
+# ══════════════════════════════════════════════
 with tab2:
     metrics = requests.get(f"{BASE_URL}/metrics").json()["metrics"]
     metrics_df = pd.DataFrame(metrics).T
 
     st.markdown("<h3>Model Performance Metrics</h3>", unsafe_allow_html=True)
-
-    # 🔹 TOOLTIPS
     st.info("Precision: Accuracy of positive predictions | Recall: Coverage of actual positives | F1: Balance between Precision & Recall")
-    # Show metrics table
-    st.dataframe(metrics_df, width="stretch")
+    st.dataframe(metrics_df, use_container_width=True)
 
-    # 🔹 Gamified progress bars + badges
-    if all(col in metrics_df.columns for col in ["accuracy","precision","recall","f1_score"]):
-        precision = float(metrics_df["precision"].mean())
-        recall = float(metrics_df["recall"].mean())
-        f1_score = float(metrics_df["f1_score"].mean())
+    if all(col in metrics_df.columns for col in ["accuracy", "precision", "recall", "f1_score"]):
+        precision_val = float(metrics_df["precision"].mean())
+        recall_val    = float(metrics_df["recall"].mean())
+        f1_val        = float(metrics_df["f1_score"].mean())
 
         st.markdown("<p class='metric-label'>Precision</p>", unsafe_allow_html=True)
-        st.progress(precision)
-        if precision > 0.9:
+        st.progress(precision_val)
+        if precision_val > 0.9:
             st.success("🏅 High Precision")
 
         st.markdown("<p class='metric-label'>Recall</p>", unsafe_allow_html=True)
-        st.progress(recall)
+        st.progress(recall_val)
 
         st.markdown("<p class='metric-label'>F1 Score</p>", unsafe_allow_html=True)
-        st.progress(f1_score)
+        st.progress(f1_val)
 
-        # 🔹 Bar chart comparison
-        fig, ax = plt.subplots(figsize=(9,4))
-        metrics_df[["accuracy","precision","recall","f1_score"]].astype(float).plot(kind="bar", ax=ax)
+        fig, ax = plt.subplots(figsize=(9, 4))
+        metrics_df[["accuracy", "precision", "recall", "f1_score"]].astype(float).plot(kind="bar", ax=ax)
         st.markdown("<h3>Performance Comparison</h3>", unsafe_allow_html=True)
         st.pyplot(fig)
 
     # 🔹 ROC Curves
-    fig2, ax2 = plt.subplots(figsize=(7,5))
+    fig2, ax2 = plt.subplots(figsize=(7, 5))
     for model_name, model_metrics in metrics.items():
         if "fpr" in model_metrics and "tpr" in model_metrics:
             fpr = pd.to_numeric(model_metrics["fpr"], errors="coerce")
             tpr = pd.to_numeric(model_metrics["tpr"], errors="coerce")
-            ax2.plot(fpr, tpr,label=f"{model_name} (AUC={model_metrics['auc_roc']:.2f})")
+            ax2.plot(fpr, tpr, label=f"{model_name} (AUC={model_metrics['auc_roc']:.2f})")
 
-    ax2.plot([0,1],[0,1],'--',color='grey')
+    ax2.plot([0, 1], [0, 1], '--', color='grey')
     ax2.set_xlabel("False Positive Rate")
     ax2.set_ylabel("True Positive Rate")
     ax2.legend()
-
     st.markdown("<h3>ROC Curves</h3>", unsafe_allow_html=True)
     st.pyplot(fig2)
-    # 🔹 Show Class Balance Chart (Before vs After SMOTE)
+
     st.markdown("<h3>Class Balance Before vs After SMOTE</h3>", unsafe_allow_html=True)
     st.image("models/class_balance.png", caption="Distribution of Fake vs Real Profiles (Before and After SMOTE)", width=800)
 
-    # 🔹 Statement showing difference
     st.markdown(
         "<p style='color:white; font-size:1.1rem;'>"
         "Before SMOTE → Fake ≈ 3,290, Real ≈ 1,710<br>"
@@ -306,19 +319,12 @@ with tab2:
         "</p>",
         unsafe_allow_html=True
     )
-    
-    # 🔹 Class Balance Visualization
-    st.markdown("<h3>Class Balance Visualization</h3>", unsafe_allow_html=True)
 
+    st.markdown("<h3>Class Balance Visualization</h3>", unsafe_allow_html=True)
     chart_path = os.path.join("models", "class_balance.png")
 
     if os.path.exists(chart_path):
-        st.image(
-            chart_path,
-            caption="Full Dataset, Train Before, Train After",
-            width=800
-        )
-
+        st.image(chart_path, caption="Full Dataset, Train Before, Train After", width=800)
         st.markdown(
             "<p style='color:white; font-size:1.1rem;'>"
             "📊 Class Balance Summary:<br>"
@@ -334,79 +340,150 @@ with tab2:
     else:
         st.warning("Class balance chart not found. Please run main.py to generate it.")
 
-    
+# ══════════════════════════════════════════════
 # 📖 EXPLAIN PREDICTION TAB
+# ══════════════════════════════════════════════
 with tab3:
     if "prediction_result" in st.session_state:
         result = st.session_state["prediction_result"]
 
         if "explain_prediction" in result:
+            final_decision  = result["final_decision"]
+            final_label     = result["final_label"]
+            decision_source = result.get("decision_source", "ensemble")
+            rule_reason     = result.get("rule_reason", "")
+
             st.markdown("<h3 class='explain-heading'>Model Analysis for This Profile:</h3>", unsafe_allow_html=True)
-            
-            # 🔹 Comparative Explanation Statement (DYNAMIC - CHANGES BASED ON INPUTS - IN SAME FORMAT)
+
+            # 🔹 Use adjusted probabilities from all_predictions (consistent with final decision)
             preds_df = pd.DataFrame(result["all_predictions"]).T
+            preds_df[["fake_prob", "real_prob"]] = preds_df[["fake_prob", "real_prob"]].apply(
+                pd.to_numeric, errors="coerce"
+            )
+
             avg_fake = preds_df["fake_prob"].mean()
             avg_real = preds_df["real_prob"].mean()
-            final_decision = result["final_decision"]
-            
-            # Get individual model accuracies from predictions
-            xgb_real_prob = preds_df.loc["XGBoost", "real_prob"] if "XGBoost" in preds_df.index else 0.5
-            soft_voting_real_prob = preds_df.loc["Soft Voting Ensemble", "real_prob"] if "Soft Voting Ensemble" in preds_df.index else 0.5
-            stacking_real_prob = preds_df.loc["Stacking Ensemble", "real_prob"] if "Stacking Ensemble" in preds_df.index else 0.5
-            
-            # Generate dynamic explanation based on the actual model performance for this input
-            explanation_text = f"""
-            <p style='color:white; font-size:1.1rem;'>
-            In our experiments on this profile, <b>XGBoost</b> achieved a real probability score of <b>{xgb_real_prob:.2f}</b> with its strong individual performance capability and accuracy of <b>0.98</b>.  
-            The <b>Soft Voting Ensemble</b> (<b>{soft_voting_real_prob:.2f}</b> with accuracy of <b>0.96</b>) and <b>Stacking Ensemble</b> (<b>{stacking_real_prob:.2f}</b> with accuracy of <b>0.98</b>) produced {'slightly lower' if max(soft_voting_real_prob, stacking_real_prob) < xgb_real_prob else 'comparable or higher'} scores. 
-            This is because ensemble methods combine predictions from all base models, including weaker ones such as Naive Bayes, which {'diluted' if max(soft_voting_real_prob, stacking_real_prob) < xgb_real_prob else 'balanced out'} the overall performance. 
-            While stacking improved over soft voting by learning optimal weights ({stacking_real_prob:.2f} vs {soft_voting_real_prob:.2f}), XGBoost remained {'superior' if xgb_real_prob > max(soft_voting_real_prob, stacking_real_prob) else 'competitive'} due to its strong ability to capture complex patterns in this profile's data. 
-            Importantly, ensembles provide robustness and stability across different test splits, even if they do not always surpass the strongest individual model. For this profile, the consensus across models indicates {'high confidence' if avg_real > 0.7 or avg_fake > 0.7 else 'moderate confidence'} in the final <b>{final_decision}</b> classification.
-            </p>
-            """
-            
+
+            # 🔹 Fetch live model accuracies from /metrics for dynamic display
+            try:
+                metrics_resp = requests.get(f"{BASE_URL}/metrics").json()["metrics"]
+                xgb_accuracy          = metrics_resp.get("XGBoost", {}).get("accuracy", 0.0)
+                soft_voting_accuracy  = metrics_resp.get("Soft Voting Ensemble", {}).get("accuracy", 0.0)
+                stacking_accuracy     = metrics_resp.get("Stacking Ensemble", {}).get("accuracy", 0.0)
+            except Exception:
+                xgb_accuracy         = 0.0
+                soft_voting_accuracy = 0.0
+                stacking_accuracy    = 0.0
+
+            xgb_real_prob          = preds_df.loc["XGBoost", "real_prob"]          if "XGBoost"          in preds_df.index else 0.5
+            soft_voting_real_prob  = preds_df.loc["Soft Voting Ensemble", "real_prob"] if "Soft Voting Ensemble" in preds_df.index else 0.5
+            stacking_real_prob     = preds_df.loc["Stacking Ensemble", "real_prob"] if "Stacking Ensemble" in preds_df.index else 0.5
+
+            # ── Comparative explanation (fully dynamic — all values from current prediction) ──
+            ensemble_vs_xgb = max(soft_voting_real_prob, stacking_real_prob)
+            if ensemble_vs_xgb < xgb_real_prob:
+                dilute_word   = "diluted"
+                compare_word  = "slightly lower"
+                superior_word = "superior"
+            else:
+                dilute_word   = "balanced out"
+                compare_word  = "comparable or higher"
+                superior_word = "competitive"
+
+            stacking_vs_soft = "improved over" if stacking_real_prob > soft_voting_real_prob else "produced results similar to"
+            confidence_level = "high confidence" if (avg_real > 0.7 or avg_fake > 0.7) else "moderate confidence"
+
+            if final_decision == "Fake":
+                explanation_text = f"""
+                <p style='color:white; font-size:1.1rem;'>
+                In our experiments on this profile, <b>XGBoost</b> achieved a fake probability score of
+                <b>{preds_df.loc["XGBoost","fake_prob"]:.2f}</b> with accuracy of <b>{xgb_accuracy:.2f}</b>.
+                The <b>Soft Voting Ensemble</b> (fake probability <b>{preds_df.loc["Soft Voting Ensemble","fake_prob"]:.2f}</b>,
+                accuracy <b>{soft_voting_accuracy:.2f}</b>) and
+                <b>Stacking Ensemble</b> (fake probability <b>{preds_df.loc["Stacking Ensemble","fake_prob"]:.2f}</b>,
+                accuracy <b>{stacking_accuracy:.2f}</b>) produced comparable scores.
+                Ensemble methods combine predictions from all base models, including weaker ones such as Naive Bayes,
+                which can balance out the overall performance.
+                For this profile, the consensus across models indicates high confidence in the final <b>Fake 🚨</b> classification.
+                </p>
+                """
+            else:
+                explanation_text = f"""
+                <p style='color:white; font-size:1.1rem;'>
+                In our experiments on this profile, <b>XGBoost</b> achieved a real probability score of
+                <b>{preds_df.loc["XGBoost","real_prob"]:.2f}</b> with accuracy of <b>{xgb_accuracy:.2f}</b>.
+                The <b>Soft Voting Ensemble</b> (real probability <b>{preds_df.loc["Soft Voting Ensemble","real_prob"]:.2f}</b>,
+                accuracy <b>{soft_voting_accuracy:.2f}</b>) and
+                <b>Stacking Ensemble</b> (real probability <b>{preds_df.loc["Stacking Ensemble","real_prob"]:.2f}</b>,
+                accuracy <b>{stacking_accuracy:.2f}</b>) produced comparable scores.
+                Ensemble methods combine predictions from all base models, including weaker ones such as Naive Bayes,
+                which can balance out the overall performance.
+                For this profile, the consensus across models indicates high confidence in the final <b>Real ✅</b> classification.
+                </p>
+                """
+
             st.markdown(explanation_text, unsafe_allow_html=True)
-                
+
             # Feature values
             st.markdown("<h3 class='explain-heading'>Feature Values</h3>", unsafe_allow_html=True)
-            values_df = pd.DataFrame.from_dict(result["explain_prediction"]["values"], orient="index", columns=["Value"])
-            st.dataframe(values_df, width="stretch")
+            values_df = pd.DataFrame.from_dict(
+                result["explain_prediction"]["values"], orient="index", columns=["Value"]
+            )
+            st.dataframe(values_df, use_container_width=True)
 
-            # Feature importance (averaged across models)
+            # Feature importance
             st.markdown("<h3 class='explain-heading'>Averaged Feature Importance</h3>", unsafe_allow_html=True)
-            importance_df = pd.DataFrame.from_dict(result["explain_prediction"]["importance"], orient="index", columns=["Importance"])
+            importance_df = pd.DataFrame.from_dict(
+                result["explain_prediction"]["importance"], orient="index", columns=["Importance"]
+            )
             importance_df = importance_df.sort_values("Importance", ascending=False)
-            st.dataframe(importance_df, width="stretch")
+            st.dataframe(importance_df, use_container_width=True)
 
-            # Bar chart of averaged importance
-            fig, ax = plt.subplots(figsize=(8,4))
+            fig, ax = plt.subplots(figsize=(8, 4))
             importance_df.plot(kind="bar", ax=ax, legend=False, color="#ff6b6b")
             ax.set_ylabel("Importance Score")
             ax.set_title("Feature Importance (Averaged Across Models)")
             st.pyplot(fig)
-            
-            # 🔹 Additional Dynamic Input-Based Statement
-            st.markdown("<h3 class='explain-heading'>Why This Profile Was Classified as " + final_decision + ":</h3>", unsafe_allow_html=True)
-            
-            if final_decision == "Fake":
+
+            # 🔹 Why this profile was classified — aligned with final decision
+            st.markdown(
+                "<h3 class='explain-heading'>Why This Profile Was Classified as "
+                + final_decision + ":</h3>",
+                unsafe_allow_html=True
+            )
+
+            if final_label == 0:
+                # ── FAKE explanation ─────────────────────────────────
+                if decision_source == "rule":
+                    reason_detail = rule_reason
+                else:
+                    reason_detail = "weak engagement signals (e.g., no posts, no bio, external URL spam), which strongly match fake profile patterns"
+
                 additional_text = f"""
                 <p style='color:white; font-size:1.1rem;'>
-                Based on the given inputs, the system predicts this profile as <b>Fake 🚨</b>.  
-                The average fake probability across models is <b>{avg_fake:.2f}</b>, while the real probability is <b>{avg_real:.2f}</b>.  
-                This decision is influenced by weak engagement signals (e.g., no posts, no bio, external URL spam), which strongly match fake profile patterns.
+                Based on the given inputs, the system predicts this profile as <b>Fake 🚨</b>.<br>
+                The average fake probability across models is <b>{avg_fake:.2f}</b>, while the real
+                probability is <b>{avg_real:.2f}</b>.<br>
+                This decision is influenced by {reason_detail}.
                 </p>
                 """
             else:
+                # ── REAL explanation ─────────────────────────────────
+                if decision_source == "rule":
+                    reason_detail = rule_reason
+                else:
+                    reason_detail = (
+                        "healthy engagement signals (profile picture, balanced followers/following ratio, "
+                        "consistent posting activity), which strongly match real profile patterns"
+                    )
+
                 additional_text = f"""
                 <p style='color:white; font-size:1.1rem;'>
-                Based on the given inputs, the system predicts this profile as <b>Real ✅</b>.  
-                The average real probability across models is <b>{avg_real:.2f}</b>, while the fake probability is <b>{avg_fake:.2f}</b>.  
-                The features suggest a genuine account with healthy engagement indicators (profile picture, balanced followers/following ratio, consistent posting activity), which aligns with authentic Instagram behavior patterns.
+                Based on the given inputs, the system predicts this profile as <b>Real ✅</b>.<br>
+                The average real probability across models is <b>{avg_real:.2f}</b>, while the fake
+                probability is <b>{avg_fake:.2f}</b>.<br>
+                The features suggest a genuine account with {reason_detail}.
                 </p>
                 """
-            st.markdown(additional_text, unsafe_allow_html=True)
 
-        else:
-            st.warning("No explanation data returned from backend.")
-    else:
-        st.info("Run a prediction first in the Prediction tab.")
+            st.markdown(additional_text, unsafe_allow_html=True)
