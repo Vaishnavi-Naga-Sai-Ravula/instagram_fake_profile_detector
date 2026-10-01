@@ -1,0 +1,17 @@
+#requirements.txt
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+xgboost
+imbalanced-learn
+shap
+lime
+tensorflow
+keras
+streamlit
+flask
+openpyxl
+requests
+joblib
